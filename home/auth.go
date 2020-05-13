@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/AdguardTeam/golibs/log"
-	"github.com/etcd-io/bbolt"
+	"go.etcd.io/bbolt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -310,7 +310,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	cookie := Context.auth.httpCookie(req)
 	if len(cookie) == 0 {
 		log.Info("Auth: invalid user name or password: name='%s'", req.Name)
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 		http.Error(w, "invalid user name or password", http.StatusBadRequest)
 		return
 	}
@@ -407,6 +407,7 @@ func optionalAuth(handler func(http.ResponseWriter, *http.Request)) func(http.Re
 				}
 			}
 			if !ok {
+				time.Sleep(time.Second * 5)
 				if r.URL.Path == "/" || r.URL.Path == "/index.html" {
 					w.Header().Set("Location", "/login.html")
 					w.WriteHeader(http.StatusFound)

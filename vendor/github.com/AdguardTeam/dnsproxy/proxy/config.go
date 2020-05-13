@@ -1,0 +1,131 @@
+package proxy
+
+import (
+	"crypto/tls"
+	"errors"
+	"net"
+
+	"github.com/AdguardTeam/dnsproxy/upstream"
+	"github.com/AdguardTeam/golibs/log"
+)
+
+// Config contains all the fields necessary for proxy configuration
+type Config struct {
+	// Listeners
+	// --
+
+	UDPListenAddr   *net.UDPAddr // if nil, then it does not listen for UDP
+	TCPListenAddr   *net.TCPAddr // if nil, then it does not listen for TCP
+	HTTPSListenAddr *net.TCPAddr // if nil, then it does not listen for HTTPS (DoH)
+	TLSListenAddr   *net.TCPAddr // if nil, then it does not listen for TLS (DoT)
+	TLSConfig       *tls.Config  // necessary for listening for TLS
+
+	// Rate-limiting and anti-DNS amplification measures
+	// --
+
+	Ratelimit          int      // max number of requests per second from a given IP (0 to disable)
+	RatelimitWhitelist []string // a list of whitelisted client IP addresses
+	RefuseAny          bool     // if true, refuse ANY requests
+
+	// Upstream DNS servers and their settings
+	// --
+
+	UpstreamConfig  *UpstreamConfig     // Upstream DNS servers configuration
+	Fallbacks       []upstream.Upstream // list of fallback resolvers (which will be used if regular upstream failed to answer)
+	AllServers      bool                // if true, parallel queries to all configured upstream servers are enabled
+	FindFastestAddr bool                // use Fastest Address algorithm
+
+	// BogusNXDomain - transforms responses that contain only given IP addresses into NXDOMAIN
+	// Similar to dnsmasq's "bogus-nxdomain"
+	BogusNXDomain []net.IP
+
+	// Enable EDNS Client Subnet option
+	// DNS requests to the upstream server will contain an OPT record with Client Subnet option.
+	//  If the original request already has this option set, we pass it through as is.
+	//  Otherwise, we set it ourselves using the client IP with subnet /24 (for IPv4) and /112 (for IPv6).
+	//
+	// If the upstream server supports ECS, it sets subnet number in the response.
+	// This subnet number along with the client IP and other data is used as a cache key.
+	// Next time, if a client from the same subnet requests this host name,
+	//  we get the response from cache.
+	// If another client from a different subnet requests this host name,
+	//  we pass his request to the upstream server.
+	//
+	// If the upstream server doesn't support ECS (there's no subnet number in response),
+	//  this response will be cached for all clients.
+	//
+	// If client IP is private (i.e. not public), we don't add EDNS record into a request.
+	// And so there will be no EDNS record in response either.
+	// We store these responses in general cache (without subnet)
+	//  so they will never be used for clients with public IP addresses.
+	EnableEDNSClientSubnet bool
+	EDNSAddr               net.IP // ECS IP used in request
+
+	// Cache settings
+	// --
+
+	CacheEnabled   bool   // cache status
+	CacheSizeBytes int    // Cache size (in bytes). Default: 64k
+	CacheMinTTL    uint32 // Minimum TTL for DNS entries (in seconds).
+	CacheMaxTTL    uint32 // Maximum TTL for DNS entries (in seconds).
+
+	// Handlers (for the case when dnsproxy is used as a library)
+	// --
+
+	BeforeRequestHandler BeforeRequestHandler // callback that is called before each request
+	RequestHandler       RequestHandler       // callback that can handle incoming DNS requests
+	ResponseHandler      ResponseHandler      // response callback
+
+	// Other settings
+	// --
+
+	MaxGoroutines int // maximum number of goroutines processing the DNS requests (important for mobile)
+}
+
+// validateConfig verifies that the supplied configuration is valid and returns an error if it's not
+func (p *Proxy) validateConfig() error {
+	if p.started {
+		return errors.New("server has been already started")
+	}
+
+	if p.UDPListenAddr == nil && p.TCPListenAddr == nil && p.TLSListenAddr == nil && p.HTTPSListenAddr == nil {
+		return errors.New("no listen address specified")
+	}
+
+	if p.TLSListenAddr != nil && p.TLSConfig == nil {
+		return errors.New("cannot create a TLS listener without TLS config")
+	}
+
+	if p.HTTPSListenAddr != nil && p.TLSConfig == nil {
+		return errors.New("cannot create an HTTPS listener without TLS config")
+	}
+
+	if p.UpstreamConfig == nil {
+		return errors.New("no default upstreams specified")
+	}
+
+	if len(p.UpstreamConfig.Upstreams) == 0 {
+		if len(p.UpstreamConfig.DomainReservedUpstreams) == 0 {
+			return errors.New("no upstreams specified")
+		}
+		return errors.New("no default upstreams specified")
+	}
+
+	if p.CacheMinTTL > 0 || p.CacheMaxTTL > 0 {
+		log.Info("Cache TTL override is enabled. Min=%d, Max=%d", p.CacheMinTTL, p.CacheMaxTTL)
+	}
+
+	if p.Ratelimit > 0 {
+		log.Info("Ratelimit is enabled and set to %d rps", p.Ratelimit)
+	}
+
+	if p.RefuseAny {
+		log.Info("The server is configured to refuse ANY requests")
+	}
+
+	if len(p.BogusNXDomain) > 0 {
+		log.Info("%d bogus-nxdomain IP specified", len(p.BogusNXDomain))
+	}
+
+	return nil
+}

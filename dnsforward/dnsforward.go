@@ -24,7 +24,7 @@ import (
 )
 
 // DefaultTimeout is the default upstream timeout
-const DefaultTimeout = 10 * time.Second
+const DefaultTimeout = 5 * time.Second
 
 const (
 	safeBrowsingBlockHost = "standard-block.dns.adguard.com"
@@ -32,6 +32,12 @@ const (
 )
 
 var defaultDNS = []string{
+	"tls://dns.quad9.net",
+	"tls://9.9.9.9",
+	"tls://1.1.1.1",
+	"https://dns10.quad9.net/dns-query",
+	"9.9.9.9",
+	"1.1.1.1",
 	"https://dns10.quad9.net/dns-query",
 }
 var defaultBootstrap = []string{"9.9.9.10", "149.112.112.10", "2620:fe::10", "2620:fe::fe:10"}
@@ -290,28 +296,32 @@ func (s *Server) Prepare(config *ServerConfig) error {
 	}
 
 	proxyConfig := proxy.Config{
-		UDPListenAddr:            s.conf.UDPListenAddr,
-		TCPListenAddr:            s.conf.TCPListenAddr,
-		Ratelimit:                int(s.conf.Ratelimit),
-		RatelimitWhitelist:       s.conf.RatelimitWhitelist,
-		RefuseAny:                s.conf.RefuseAny,
-		CacheEnabled:             true,
-		CacheSizeBytes:           int(s.conf.CacheSize),
-		CacheMinTTL:              s.conf.CacheMinTTL,
-		CacheMaxTTL:              s.conf.CacheMaxTTL,
-		Upstreams:                s.conf.Upstreams,
-		DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
-		BeforeRequestHandler:     s.beforeRequestHandler,
-		RequestHandler:           s.handleDNSRequest,
-		AllServers:               s.conf.AllServers,
-		EnableEDNSClientSubnet:   s.conf.EnableEDNSClientSubnet,
+		UDPListenAddr:      s.conf.UDPListenAddr,
+		TCPListenAddr:      s.conf.TCPListenAddr,
+		Ratelimit:          int(s.conf.Ratelimit),
+		RatelimitWhitelist: s.conf.RatelimitWhitelist,
+		RefuseAny:          s.conf.RefuseAny,
+		CacheEnabled:       true,
+		CacheSizeBytes:     int(s.conf.CacheSize),
+		CacheMinTTL:        s.conf.CacheMinTTL,
+		CacheMaxTTL:        s.conf.CacheMaxTTL,
+		//Upstreams:                s.conf.Upstreams,
+		//DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		BeforeRequestHandler:   s.beforeRequestHandler,
+		RequestHandler:         s.handleDNSRequest,
+		AllServers:             s.conf.AllServers,
+		EnableEDNSClientSubnet: s.conf.EnableEDNSClientSubnet,
+		UpstreamConfig: &proxy.UpstreamConfig{
+			Upstreams:               s.conf.Upstreams,
+			DomainReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		},
 	}
 
 	intlProxyConfig := proxy.Config{
-		CacheEnabled:             true,
-		CacheSizeBytes:           4096,
-		Upstreams:                s.conf.Upstreams,
-		DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		CacheEnabled:   true,
+		CacheSizeBytes: 4096,
+		//Upstreams:                s.conf.Upstreams,
+		//DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
 	}
 	s.internalProxy = &proxy.Proxy{Config: intlProxyConfig}
 
@@ -351,7 +361,7 @@ func (s *Server) Prepare(config *ServerConfig) error {
 	upstream.RootCAs = s.conf.TLSv12Roots
 	upstream.CipherSuites = s.conf.TLSCiphers
 
-	if len(proxyConfig.Upstreams) == 0 {
+	if len(proxyConfig.UpstreamConfig.Upstreams) == 0 {
 		log.Fatal("len(proxyConfig.Upstreams) == 0")
 	}
 
@@ -593,7 +603,7 @@ func processUpstream(ctx *dnsContext) int {
 		upstreams := s.conf.GetUpstreamsByClient(clientIP)
 		if len(upstreams) > 0 {
 			log.Debug("Using custom upstreams for %s", clientIP)
-			d.Upstreams = upstreams
+			d.CustomUpstreamConfig.Upstreams = upstreams
 		}
 	}
 

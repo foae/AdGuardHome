@@ -140,11 +140,11 @@ func initConfig() {
 	config.DNS.QueryLogInterval = 90
 	config.DNS.QueryLogMemSize = 1000
 
-	config.DNS.CacheSize = 4 * 1024 * 1024
+	config.DNS.CacheSize = 128 * 1024 * 1024
 	config.DNS.DnsfilterConf.SafeBrowsingCacheSize = 1 * 1024 * 1024
 	config.DNS.DnsfilterConf.SafeSearchCacheSize = 1 * 1024 * 1024
 	config.DNS.DnsfilterConf.ParentalCacheSize = 1 * 1024 * 1024
-	config.DNS.DnsfilterConf.CacheTime = 30
+	config.DNS.DnsfilterConf.CacheTime = 90
 	config.Filters = defaultFilters()
 }
 

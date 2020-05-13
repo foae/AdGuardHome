@@ -325,7 +325,7 @@ func (s *Server) startWithUpstream(u upstream.Upstream) error {
 	if err != nil {
 		return err
 	}
-	s.dnsProxy.Upstreams = []upstream.Upstream{u}
+	s.dnsProxy.UpstreamConfig.Upstreams = []upstream.Upstream{u}
 	return s.dnsProxy.Start()
 }
 

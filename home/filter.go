@@ -65,10 +65,31 @@ func (f *Filtering) Close() {
 
 func defaultFilters() []filter {
 	return []filter{
-		{Filter: dnsfilter.Filter{ID: 1}, Enabled: true, URL: "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt", Name: "AdGuard Simplified Domain Names filter"},
-		{Filter: dnsfilter.Filter{ID: 2}, Enabled: false, URL: "https://adaway.org/hosts.txt", Name: "AdAway"},
-		{Filter: dnsfilter.Filter{ID: 3}, Enabled: false, URL: "https://hosts-file.net/ad_servers.txt", Name: "hpHosts - Ad and Tracking servers only"},
-		{Filter: dnsfilter.Filter{ID: 4}, Enabled: false, URL: "https://www.malwaredomainlist.com/hostslist/hosts.txt", Name: "MalwareDomainList.com Hosts List"},
+		{Filter: dnsfilter.Filter{ID: 1}, Enabled: false, URL: "https://raw.githubusercontent.com/Spam404/lists/master/adblock-list.txt", Name: "Spam404"},
+		{Filter: dnsfilter.Filter{ID: 2}, Enabled: false, URL: "https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt", Name: "NoCoin Filter List"},
+		{Filter: dnsfilter.Filter{ID: 3}, Enabled: false, URL: "https://raw.githubusercontent.com/notracking/hosts-blocklists/master/hostnames.txt", Name: "NoTracking Hostnames"},
+		{Filter: dnsfilter.Filter{ID: 4}, Enabled: false, URL: "https://raw.githubusercontent.com/notracking/hosts-blocklists/master/domains.txt", Name: "NoTracking Domains"},
+		{Filter: dnsfilter.Filter{ID: 5}, Enabled: true, URL: "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt", Name: "AdGuard Simplified Domain Names filter"},
+		{Filter: dnsfilter.Filter{ID: 6}, Enabled: false, URL: "https://adaway.org/hosts.txt", Name: "AdAway"},
+		{Filter: dnsfilter.Filter{ID: 7}, Enabled: false, URL: "https://hosts-file.net/ad_servers.txt", Name: "hpHosts - Ad and Tracking servers only"},
+		{Filter: dnsfilter.Filter{ID: 8}, Enabled: false, URL: "https://www.malwaredomainlist.com/hostslist/hosts.txt", Name: "MalwareDomainList.com Hosts List"},
+		{Filter: dnsfilter.Filter{ID: 9}, Enabled: false, URL: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts", Name: "Steven Black hosts"},
+		{Filter: dnsfilter.Filter{ID: 10}, Enabled: false, URL: "http://sysctl.org/cameleon/hosts", Name: "Cameleon hosts"},
+		{Filter: dnsfilter.Filter{ID: 11}, Enabled: false, URL: "https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt", Name: "Disconnect: simple ad"},
+		{Filter: dnsfilter.Filter{ID: 12}, Enabled: false, URL: "https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt", Name: "Prebake - Filter Obtrusive Cookie Notices"},
+
+		{Filter: dnsfilter.Filter{ID: 13}, Enabled: false, URL: "https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt", Name: "EasyList without element hiding rules"},
+		{Filter: dnsfilter.Filter{ID: 14}, Enabled: false, URL: "https://raw.githubusercontent.com/tcptomato/ROad-Block/master/road-block-filters.txt", Name: "EasyList: ROU: Romanian Ad (ROad) Block List"},
+		{Filter: dnsfilter.Filter{ID: 15}, Enabled: false, URL: "https://easylist.to/easylist/easylist.txt", Name: "EasyList"},
+		{Filter: dnsfilter.Filter{ID: 16}, Enabled: false, URL: "https://easylist.to/easylist/easyprivacy.txt", Name: "EasyPrivacy"},
+		{Filter: dnsfilter.Filter{ID: 17}, Enabled: false, URL: "https://easylist-downloads.adblockplus.org/easylistdutch.txt", Name: "EasyList Dutch"},
+		{Filter: dnsfilter.Filter{ID: 18}, Enabled: false, URL: "https://easylist.to/easylistgermany/easylistgermany.txt", Name: "EasyList German"},
+		{Filter: dnsfilter.Filter{ID: 19}, Enabled: false, URL: "https://easylist-downloads.adblockplus.org/easyprivacy.tpl", Name: "EasyList EasyPrivacy"},
+		{Filter: dnsfilter.Filter{ID: 20}, Enabled: false, URL: "https://easylist.to/easylist/fanboy-annoyance.txt", Name: "Fanboy's Annoyance List"},
+		{Filter: dnsfilter.Filter{ID: 21}, Enabled: false, URL: "https://easylist.to/easylist/fanboy-social.txt", Name: "Fanboy's Social Blocking List"},
+
+		{Filter: dnsfilter.Filter{ID: 22}, Enabled: false, URL: "https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt", Name: "AdBlockPlus Anti Circumvention"},
+		{Filter: dnsfilter.Filter{ID: 23}, Enabled: false, URL: "https://easylist-downloads.adblockplus.org/malwaredomains_full.txt", Name: "AdBlockPlus Malware Domains"},
 	}
 }
 
