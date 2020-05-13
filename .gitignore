@@ -13,6 +13,7 @@
 /querylog.json.1
 /a_main-packr.go
 coverage.txt
+node_modules
 
 # Test output
 dnsfilter/tests/top-1m.csv

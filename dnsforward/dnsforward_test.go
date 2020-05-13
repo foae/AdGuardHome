@@ -325,6 +325,13 @@ func (s *Server) startWithUpstream(u upstream.Upstream) error {
 	if err != nil {
 		return err
 	}
+
+	if s.dnsProxy.UpstreamConfig == nil {
+		s.dnsProxy.UpstreamConfig = &proxy.UpstreamConfig{
+			Upstreams:               make([]upstream.Upstream, 0),
+			DomainReservedUpstreams: make(map[string][]upstream.Upstream),
+		}
+	}
 	s.dnsProxy.UpstreamConfig.Upstreams = []upstream.Upstream{u}
 	return s.dnsProxy.Start()
 }

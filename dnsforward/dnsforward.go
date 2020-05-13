@@ -296,17 +296,15 @@ func (s *Server) Prepare(config *ServerConfig) error {
 	}
 
 	proxyConfig := proxy.Config{
-		UDPListenAddr:      s.conf.UDPListenAddr,
-		TCPListenAddr:      s.conf.TCPListenAddr,
-		Ratelimit:          int(s.conf.Ratelimit),
-		RatelimitWhitelist: s.conf.RatelimitWhitelist,
-		RefuseAny:          s.conf.RefuseAny,
-		CacheEnabled:       true,
-		CacheSizeBytes:     int(s.conf.CacheSize),
-		CacheMinTTL:        s.conf.CacheMinTTL,
-		CacheMaxTTL:        s.conf.CacheMaxTTL,
-		//Upstreams:                s.conf.Upstreams,
-		//DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		UDPListenAddr:          s.conf.UDPListenAddr,
+		TCPListenAddr:          s.conf.TCPListenAddr,
+		Ratelimit:              int(s.conf.Ratelimit),
+		RatelimitWhitelist:     s.conf.RatelimitWhitelist,
+		RefuseAny:              s.conf.RefuseAny,
+		CacheEnabled:           true,
+		CacheSizeBytes:         int(s.conf.CacheSize),
+		CacheMinTTL:            s.conf.CacheMinTTL,
+		CacheMaxTTL:            s.conf.CacheMaxTTL,
 		BeforeRequestHandler:   s.beforeRequestHandler,
 		RequestHandler:         s.handleDNSRequest,
 		AllServers:             s.conf.AllServers,
@@ -320,8 +318,10 @@ func (s *Server) Prepare(config *ServerConfig) error {
 	intlProxyConfig := proxy.Config{
 		CacheEnabled:   true,
 		CacheSizeBytes: 4096,
-		//Upstreams:                s.conf.Upstreams,
-		//DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		UpstreamConfig: &proxy.UpstreamConfig{
+			Upstreams:               s.conf.Upstreams,
+			DomainReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		},
 	}
 	s.internalProxy = &proxy.Proxy{Config: intlProxyConfig}
 
@@ -361,7 +361,7 @@ func (s *Server) Prepare(config *ServerConfig) error {
 	upstream.RootCAs = s.conf.TLSv12Roots
 	upstream.CipherSuites = s.conf.TLSCiphers
 
-	if len(proxyConfig.UpstreamConfig.Upstreams) == 0 {
+	if proxyConfig.UpstreamConfig == nil || len(proxyConfig.UpstreamConfig.Upstreams) == 0 {
 		log.Fatal("len(proxyConfig.Upstreams) == 0")
 	}
 
@@ -603,6 +603,13 @@ func processUpstream(ctx *dnsContext) int {
 		upstreams := s.conf.GetUpstreamsByClient(clientIP)
 		if len(upstreams) > 0 {
 			log.Debug("Using custom upstreams for %s", clientIP)
+			if d.CustomUpstreamConfig == nil {
+				d.CustomUpstreamConfig = &proxy.UpstreamConfig{
+					Upstreams:               make([]upstream.Upstream, 0),
+					DomainReservedUpstreams: make(map[string][]upstream.Upstream),
+				}
+			}
+
 			d.CustomUpstreamConfig.Upstreams = upstreams
 		}
 	}
