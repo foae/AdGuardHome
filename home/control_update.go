@@ -81,6 +81,8 @@ type getVersionJSONRequest struct {
 
 // Get the latest available version from the Internet
 func handleGetVersionJSON(w http.ResponseWriter, r *http.Request) {
+	returnOK(w)
+	return
 
 	if Context.disableUpdate {
 		return
@@ -529,6 +531,8 @@ func finishUpdate(u *updateInfo) {
 
 // Perform an update procedure to the latest available version
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
+	returnOK(w)
+	return
 
 	if len(config.versionCheckJSON) == 0 {
 		httpError(w, http.StatusBadRequest, "/update request isn't allowed now")
