@@ -132,22 +132,24 @@ var defaultValues = ServerConfig{
 // createProxyConfig creates and validates configuration for the main proxy
 func (s *Server) createProxyConfig() (proxy.Config, error) {
 	proxyConfig := proxy.Config{
-		UDPListenAddr:            s.conf.UDPListenAddr,
-		TCPListenAddr:            s.conf.TCPListenAddr,
-		Ratelimit:                int(s.conf.Ratelimit),
-		RatelimitWhitelist:       s.conf.RatelimitWhitelist,
-		RefuseAny:                s.conf.RefuseAny,
-		CacheEnabled:             true,
-		CacheSizeBytes:           int(s.conf.CacheSize),
-		CacheMinTTL:              s.conf.CacheMinTTL,
-		CacheMaxTTL:              s.conf.CacheMaxTTL,
-		Upstreams:                s.conf.Upstreams,
-		DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
-		BeforeRequestHandler:     s.beforeRequestHandler,
-		RequestHandler:           s.handleDNSRequest,
-		AllServers:               s.conf.AllServers,
-		EnableEDNSClientSubnet:   s.conf.EnableEDNSClientSubnet,
-		FindFastestAddr:          s.conf.FastestAddr,
+		UDPListenAddr:          s.conf.UDPListenAddr,
+		TCPListenAddr:          s.conf.TCPListenAddr,
+		Ratelimit:              int(s.conf.Ratelimit),
+		RatelimitWhitelist:     s.conf.RatelimitWhitelist,
+		RefuseAny:              s.conf.RefuseAny,
+		CacheEnabled:           true,
+		CacheSizeBytes:         int(s.conf.CacheSize),
+		CacheMinTTL:            s.conf.CacheMinTTL,
+		CacheMaxTTL:            s.conf.CacheMaxTTL,
+		BeforeRequestHandler:   s.beforeRequestHandler,
+		RequestHandler:         s.handleDNSRequest,
+		AllServers:             s.conf.AllServers,
+		EnableEDNSClientSubnet: s.conf.EnableEDNSClientSubnet,
+		FindFastestAddr:        s.conf.FastestAddr,
+		UpstreamConfig: &proxy.UpstreamConfig{
+			Upstreams:               s.conf.Upstreams,
+			DomainReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		},
 	}
 
 	if len(s.conf.BogusNXDomain) > 0 {
@@ -168,7 +170,7 @@ func (s *Server) createProxyConfig() (proxy.Config, error) {
 	}
 
 	// Validate proxy config
-	if len(proxyConfig.Upstreams) == 0 {
+	if len(proxyConfig.UpstreamConfig.Upstreams) == 0 {
 		return proxyConfig, errors.New("no upstream servers configured")
 	}
 
@@ -212,10 +214,12 @@ func (s *Server) prepareUpstreamSettings() error {
 // prepareIntlProxy - initializes DNS proxy that we use for internal DNS queries
 func (s *Server) prepareIntlProxy() {
 	intlProxyConfig := proxy.Config{
-		CacheEnabled:             true,
-		CacheSizeBytes:           4096,
-		Upstreams:                s.conf.Upstreams,
-		DomainsReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		CacheEnabled:   true,
+		CacheSizeBytes: 4096,
+		UpstreamConfig: &proxy.UpstreamConfig{
+			Upstreams:               s.conf.Upstreams,
+			DomainReservedUpstreams: s.conf.DomainsReservedUpstreams,
+		},
 	}
 	s.internalProxy = &proxy.Proxy{Config: intlProxyConfig}
 }

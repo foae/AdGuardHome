@@ -2,9 +2,11 @@ package dnsforward
 
 import (
 	"fmt"
+	"github.com/AdguardTeam/dnsproxy/upstream"
 	"net"
 	"net/http"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 

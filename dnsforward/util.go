@@ -1,7 +1,6 @@
 package dnsforward
 
 import (
-	"net"
 	"sort"
 	"strings"
 
@@ -12,30 +11,6 @@ func stringArrayDup(a []string) []string {
 	a2 := make([]string, len(a))
 	copy(a2, a)
 	return a2
-}
-
-// Get IP address from net.Addr object
-// Note: we can't use net.SplitHostPort(a.String()) because of IPv6 zone:
-// https://github.com/AdguardTeam/AdGuardHome/issues/1261
-func ipFromAddr(a net.Addr) string {
-	switch addr := a.(type) {
-	case *net.UDPAddr:
-		return addr.IP.String()
-	case *net.TCPAddr:
-		return addr.IP.String()
-	}
-	return ""
-}
-
-// Get IP address from net.Addr
-func getIP(addr net.Addr) net.IP {
-	switch addr := addr.(type) {
-	case *net.UDPAddr:
-		return addr.IP
-	case *net.TCPAddr:
-		return addr.IP
-	}
-	return nil
 }
 
 // Find value in a sorted array
