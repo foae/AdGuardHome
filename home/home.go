@@ -43,10 +43,10 @@ const (
 
 // Update-related variables
 var (
-	versionString   string
-	updateChannel   string
-	versionCheckURL string
-	ARMVersion      string
+	versionString   = "dev"
+	updateChannel   = "none"
+	versionCheckURL = ""
+	ARMVersion      = ""
 )
 
 const versionCheckPeriod = time.Hour * 8
@@ -155,11 +155,11 @@ func run(args options) {
 	configureLogger(args)
 
 	// print the first message after logger is configured
-	msg := "AdGuard Home, version %s, channel %s\n, arch %s %s"
+	msg := "AdGuard Home, version %s, channel %s, arch %s %s"
 	if ARMVersion != "" {
 		msg = msg + " v" + ARMVersion
 	}
-	log.Printf(msg, versionString, updateChannel, runtime.GOOS, runtime.GOARCH, ARMVersion)
+	log.Printf(msg, versionString, updateChannel, runtime.GOOS, runtime.GOARCH)
 	log.Debug("Current working directory is %s", Context.workDir)
 	if args.runningAsService {
 		log.Info("AdGuard Home is running as a service")
@@ -169,6 +169,7 @@ func run(args options) {
 
 	Context.firstRun = detectFirstRun()
 	if Context.firstRun {
+		log.Info("This is the first time AdGuard Home is launched")
 		requireAdminRights()
 	}
 
@@ -197,6 +198,7 @@ func run(args options) {
 
 		err = parseConfig()
 		if err != nil {
+			log.Error("Failed to parse configuration, exiting")
 			os.Exit(1)
 		}
 
@@ -206,11 +208,17 @@ func run(args options) {
 		}
 	}
 
+	// 'clients' module uses 'dnsfilter' module's static data (dnsfilter.BlockedSvcKnown()),
+	//  so we have to initialize dnsfilter's static data first,
+	//  but also avoid relying on automatic Go init() function
+	dnsfilter.InitModule()
+
 	config.DHCP.WorkDir = Context.workDir
 	config.DHCP.HTTPRegister = httpRegister
 	config.DHCP.ConfigModified = onConfigModified
 	Context.dhcpServer = dhcpd.Create(config.DHCP)
 	if Context.dhcpServer == nil {
+		log.Error("Failed to initialize DHCP server, exiting")
 		os.Exit(1)
 	}
 	Context.autoHosts.Init("")
@@ -238,6 +246,16 @@ func run(args options) {
 		err := config.write()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if config.DebugPProf {
+			mux := http.NewServeMux()
+			util.PProfRegisterWebHandlers(mux)
+			go func() {
+				log.Info("pprof: listening on localhost:6060")
+				err := http.ListenAndServe("localhost:6060", mux)
+				log.Error("Error while running the pprof server: %s", err)
+			}()
 		}
 	}
 
@@ -318,6 +336,8 @@ func requireAdminRights() {
 	admin, _ := util.HaveAdminRights()
 	if //noinspection ALL
 	admin || isdelve.Enabled {
+		// Don't forget that for this to work you need to add "delve" tag explicitly
+		// https://stackoverflow.com/questions/47879070/how-can-i-see-if-the-goland-debugger-is-running-in-the-program
 		return
 	}
 
@@ -566,7 +586,9 @@ func printHTTPAddresses(proto string) {
 	var address string
 
 	tlsConf := tlsConfigSettings{}
-	Context.tls.WriteDiskConfig(&tlsConf)
+	if Context.tls != nil {
+		Context.tls.WriteDiskConfig(&tlsConf)
+	}
 	if proto == "https" && tlsConf.ServerName != "" {
 		if tlsConf.PortHTTPS == 443 {
 			log.Printf("Go to https://%s", tlsConf.ServerName)

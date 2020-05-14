@@ -882,6 +882,9 @@ Response:
 	200 OK
 
 	{
+		"upstream_dns": ["tls://...", ...],
+		"bootstrap_dns": ["1.2.3.4", ...],
+
 		"protection_enabled": true | false,
 		"ratelimit": 1234,
 		"blocking_mode": "default" | "nxdomain" | "null_ip" | "custom_ip",
@@ -890,6 +893,8 @@ Response:
 		"edns_cs_enabled": true | false,
 		"dnssec_enabled": true | false
 		"disable_ipv6": true | false,
+		"fastest_addr": true | false, // use Fastest Address algorithm
+		"parallel_requests": true | false, // send DNS requests to all upstream servers at once
 	}
 
 
@@ -900,6 +905,9 @@ Request:
 	POST /control/dns_config
 
 	{
+		"upstream_dns": ["tls://...", ...],
+		"bootstrap_dns": ["1.2.3.4", ...],
+
 		"protection_enabled": true | false,
 		"ratelimit": 1234,
 		"blocking_mode": "default" | "nxdomain" | "null_ip" | "custom_ip",
@@ -908,6 +916,8 @@ Request:
 		"edns_cs_enabled": true | false,
 		"dnssec_enabled": true | false
 		"disable_ipv6": true | false,
+		"fastest_addr": true | false, // use Fastest Address algorithm
+		"parallel_requests": true | false, // send DNS requests to all upstream servers at once
 	}
 
 Response:
@@ -1329,7 +1339,10 @@ This is how DNS requests and responses are filtered by AGH:
 
 * 'dnsproxy' module receives DNS request from client and passes control to AGH
 * AGH applies filtering logic to the host name in DNS Question:
-	* process Rewrite rules
+	* process Rewrite rules.
+		Can set CNAME and a list of IP addresses.
+	* process /etc/hosts entries.
+		Can set a list of IP addresses or a hostname (for PTR requests).
 	* match host name against filtering lists
 	* match host name against blocked services rules
 	* process SafeSearch rules
@@ -1439,7 +1452,7 @@ Request:
 
 	{
 		"name": "..."
-		"url": "..."
+		"url": "..." // URL or an absolute file path
 		"whitelist": true
 	}
 

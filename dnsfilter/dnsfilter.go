@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -273,8 +274,13 @@ type Result struct {
 	FilterID   int64  `json:",omitempty"` // Filter ID the rule belongs to
 
 	// for ReasonRewrite:
-	CanonName string   `json:",omitempty"` // CNAME value
-	IPList    []net.IP `json:",omitempty"` // list of IP addresses
+	CanonName string `json:",omitempty"` // CNAME value
+
+	// for RewriteEtcHosts:
+	ReverseHost string `json:",omitempty"`
+
+	// for ReasonRewrite & RewriteEtcHosts:
+	IPList []net.IP `json:",omitempty"` // list of IP addresses
 
 	// for FilteredBlockedService:
 	ServiceName string `json:",omitempty"` // Name of the blocked service
@@ -312,10 +318,17 @@ func (d *Dnsfilter) CheckHost(host string, qtype uint16, setts *RequestFiltering
 	}
 
 	if d.Config.AutoHosts != nil {
-		ips := d.Config.AutoHosts.Process(host)
+		ips := d.Config.AutoHosts.Process(host, qtype)
 		if ips != nil {
 			result.Reason = RewriteEtcHosts
 			result.IPList = ips
+			return result, nil
+		}
+
+		revHost := d.Config.AutoHosts.ProcessReverse(host, qtype)
+		if len(revHost) != 0 {
+			result.Reason = RewriteEtcHosts
+			result.ReverseHost = revHost + "."
 			return result, nil
 		}
 	}
@@ -516,6 +529,9 @@ func (d *Dnsfilter) initFiltering(allowFilters, blockFilters []Filter) error {
 	d.filteringEngine = filteringEngine
 	d.rulesStorageWhite = rulesStorageWhite
 	d.filteringEngineWhite = filteringEngineWhite
+
+	// Make sure that the OS reclaims memory as soon as possible
+	debug.FreeOSMemory()
 	log.Debug("initialized filtering engine")
 
 	return nil
@@ -616,6 +632,11 @@ func makeResult(rule rules.Rule, reason Reason) Result {
 	return res
 }
 
+// InitModule() - manually initialize blocked services map
+func InitModule() {
+	initBlockedServices()
+}
+
 // New creates properly initialized DNS Filter that is ready to be used
 func New(c *Config, blockFilters []Filter) *Dnsfilter {
 
@@ -664,8 +685,6 @@ func New(c *Config, blockFilters []Filter) *Dnsfilter {
 		bsvcs = append(bsvcs, s)
 	}
 	d.BlockedServices = bsvcs
-
-	initBlockedServices()
 
 	if blockFilters != nil {
 		err := d.initFiltering(nil, blockFilters)

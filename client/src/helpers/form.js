@@ -1,7 +1,10 @@
 import React, { Fragment } from 'react';
 import { Trans } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { R_IPV4, R_MAC, R_HOST, R_IPV6, R_CIDR, UNSAFE_PORTS, R_URL_REQUIRES_PROTOCOL } from '../helpers/constants';
+import {
+    R_IPV4, R_MAC, R_HOST, R_IPV6, R_CIDR, R_CIDR_IPV6,
+    UNSAFE_PORTS, R_URL_REQUIRES_PROTOCOL, R_WIN_ABSOLUTE_PATH, R_UNIX_ABSOLUTE_PATH,
+} from '../helpers/constants';
 import { createOnBlurHandler } from './helpers';
 
 export const renderField = (props, elementType) => {
@@ -114,29 +117,30 @@ export const renderSelectField = ({
     placeholder,
     subtitle,
     disabled,
+    onClick,
     modifier = 'checkbox--form',
     meta: { touched, error },
 }) => (
-    <Fragment>
-        <label className={`checkbox ${modifier}`}>
-            <span className="checkbox__marker" />
-            <input {...input} type="checkbox" className="checkbox__input" disabled={disabled} />
-            <span className="checkbox__label">
-                <span className="checkbox__label-text checkbox__label-text--long">
-                    <span className="checkbox__label-title">{placeholder}</span>
-                    {subtitle && (
-                        <span
-                            className="checkbox__label-subtitle"
-                            dangerouslySetInnerHTML={{ __html: subtitle }}
-                        />
-                    )}
+        <Fragment>
+            <label className={`checkbox ${modifier}`} onClick={onClick}>
+                <span className="checkbox__marker" />
+                <input {...input} type="checkbox" className="checkbox__input" disabled={disabled} />
+                <span className="checkbox__label">
+                    <span className="checkbox__label-text checkbox__label-text--long">
+                        <span className="checkbox__label-title">{placeholder}</span>
+                        {subtitle && (
+                            <span
+                                className="checkbox__label-subtitle"
+                                dangerouslySetInnerHTML={{ __html: subtitle }}
+                            />
+                        )}
+                    </span>
                 </span>
-            </span>
-        </label>
-        {!disabled &&
-        touched &&
-        (error && <span className="form__message form__message--error">{error}</span>)}
-    </Fragment>
+            </label>
+            {!disabled &&
+            touched &&
+            (error && <span className="form__message form__message--error">{error}</span>)}
+        </Fragment>
 );
 
 export const renderServiceField = ({
@@ -191,8 +195,13 @@ export const clientId = (value) => {
         return undefined;
     }
     const formattedValue = value ? value.trim() : value;
-    if (formattedValue && !(R_IPV4.test(formattedValue) || R_IPV6.test(formattedValue)
-        || R_MAC.test(formattedValue) || R_CIDR.test(formattedValue))) {
+    if (formattedValue && !(
+        R_IPV4.test(formattedValue)
+        || R_IPV6.test(formattedValue)
+        || R_MAC.test(formattedValue)
+        || R_CIDR.test(formattedValue)
+        || R_CIDR_IPV6.test(formattedValue)
+    )) {
         return <Trans>form_error_client_id_format</Trans>;
     }
     return undefined;
@@ -280,6 +289,16 @@ export const answer = (value) => {
 export const isValidUrl = (value) => {
     if (value && !R_URL_REQUIRES_PROTOCOL.test(value)) {
         return <Trans>form_error_url_format</Trans>;
+    }
+    return undefined;
+};
+
+export const isValidAbsolutePath = value => R_WIN_ABSOLUTE_PATH.test(value)
+    || R_UNIX_ABSOLUTE_PATH.test(value);
+
+export const isValidPath = (value) => {
+    if (value && !isValidAbsolutePath(value) && !R_URL_REQUIRES_PROTOCOL.test(value)) {
+        return <Trans>form_error_url_or_path_format</Trans>;
     }
     return undefined;
 };
